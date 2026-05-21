@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>0523淨灘活動</title>
+
+<style>
+
+body{
+    font-family: Arial;
+    background:#f3f4f6;
+    padding:30px;
+}
+
+.container{
+    max-width:600px;
+    margin:auto;
+}
+
+.card{
+    background:white;
+    padding:24px;
+    border-radius:16px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom:20px;
+}
+
+h1{
+    text-align:center;
+}
+
+input, textarea{
+    width:100%;
+    padding:12px;
+    font-size:14px;
+    border-radius:10px;
+    border:1px solid #ccc;
+    box-sizing:border-box;
+    margin-bottom:10px;
+}
+
+button{
+    width:100%;
+    padding:14px;
+    background:#2563eb;
+    color:white;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    cursor:pointer;
+    margin-top:8px;
+}
+
+.top-btn{
+    background:#111827;
+}
+
+.result{
+    margin-top:20px;
+    background:#f9fafb;
+    padding:16px;
+    border-radius:10px;
+}
+
+.item{
+    margin-bottom:8px;
+}
+
+.label{
+    font-weight:bold;
+}
+
+.notfound{
+    margin-top:20px;
+    color:red;
+    text-align:center;
+}
+
+#adminBox{
+    display:none;
+}
+
+#loginBox{
+    display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<!-- 管理按鈕 -->
+<button class="top-btn" onclick="showLogin()">管理員模式</button>
+
+<!-- 登入 -->
+<div class="card" id="loginBox">
+
+<h1>管理員登入</h1>
+
+<input type="password" id="pwd" placeholder="輸入密碼">
+<button onclick="login()">登入</button>
+
+</div>
+
+<!-- 管理區 -->
+<div class="card" id="adminBox">
+
+<h1>匯入 Google Sheet</h1>
+
+<textarea id="sheetInput" placeholder="貼上 Google Sheet（Ctrl+V）"></textarea>
+
+<button onclick="importData()">匯入並永久保存</button>
+
+<button onclick="clearData()" style="background:red;">清除資料庫</button>
+
+</div>
+
+<!-- 查詢 -->
+<div class="card">
+
+<h1>活動查詢</h1>
+
+<input type="text" id="nameInput" placeholder="輸入姓名">
+<button onclick="searchData()">查詢</button>
+
+<div id="result"></div>
+
+</div>
+
+</div>
+
+<script>
+
+let data = [];
+
+// ⭐ 密碼
+const ADMIN_PASSWORD = "1234";
+
+// ⭐ 載入本機資料
+function loadData(){
+    const saved = localStorage.getItem("eventData");
+    if(saved){
+        data = JSON.parse(saved);
+    }
+}
+loadData();
+
+// 顯示登入
+function showLogin(){
+    document.getElementById("loginBox").style.display = "block";
+}
+
+// 登入
+function login(){
+    const p = document.getElementById("pwd").value;
+
+    if(p === ADMIN_PASSWORD){
+        document.getElementById("adminBox").style.display = "block";
+        document.getElementById("loginBox").style.display = "none";
+        alert("登入成功");
+    }else{
+        alert("密碼錯誤");
+    }
+}
+
+// ⭐ 匯入 + 永久保存
+function importData(){
+
+    const text = document.getElementById("sheetInput").value.trim();
+    const rows = text.split("\n");
+
+    data = [];
+
+    for(let i=1;i<rows.length;i++){
+
+        const cols = rows[i].split("\t");
+
+        data.push({
+            姓名: cols[0] || "",
+            部門: cols[1] || "",
+            桌次: cols[2] || "",
+            車次: cols[3] || "",
+            活動分組: cols[4] || "",
+            組長: cols[5] || "",
+            備註: cols[6] || ""
+        });
+    }
+
+    // ⭐ 存進瀏覽器
+    localStorage.setItem("eventData", JSON.stringify(data));
+
+    alert("匯入並已永久保存！");
+}
+
+// 清除
+function clearData(){
+    localStorage.removeItem("eventData");
+    data = [];
+    alert("已清除資料");
+}
+
+// 查詢
+function searchData(){
+
+    const name = document.getElementById("nameInput").value.trim();
+    const resultDiv = document.getElementById("result");
+
+    const user = data.find(x => x.姓名 === name);
+
+    if(user){
+
+        resultDiv.innerHTML = `
+        <div class="result">
+
+            <div class="item"><span class="label">姓名：</span>${user.姓名}</div>
+            <div class="item"><span class="label">部門：</span>${user.部門}</div>
+            <div class="item"><span class="label">桌次：</span>${user.桌次}</div>
+            <div class="item"><span class="label">車次：</span>${user.車次}</div>
+            <div class="item"><span class="label">活動分組：</span>${user.活動分組}</div>
+            <div class="item"><span class="label">組長：</span>${user.組長}</div>
+            <div class="item"><span class="label">備註：</span>${user.備註 || "-"}</div>
+
+        </div>
+        `;
+
+    } else {
+        resultDiv.innerHTML = `<div class="notfound">查無資料</div>`;
+    }
+}
+
+</script>
+
+</body>
+</html>
